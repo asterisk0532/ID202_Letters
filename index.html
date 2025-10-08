@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<head>
+  <meta charset="UTF-8" />
+  <title>Alphabet</title>
+  <style>
+    body { font-family: monospace; text-align:center; margin-top:50px; }
+    pre { font-size:16px; white-space: pre; }
+  </style>
+</head>
+<body>
+  <h2>Alphabet</h2>
+  <pre id="art"></pre>
+
+  <script>
+    const LETTER_ART = {
+      'A': [
+        "  XXX   ",
+        "XX   XX ",
+        "XXXXXXX ",
+        "XX   XX ",
+        "XX   XX "
+      ],
+      'B': [
+        "XXXXX   ",
+        "XX   XX ",
+        "XXXXX   ",
+        "XX   XX ",
+        "XXXXX   "
+      ],
+      'C': [
+        " XXXXXX ",
+        "XX      ",
+        "XX      ",
+        "XX      ",
+        " XXXXXX "
+      ],
+      'D': [
+        "XXXXX   ",
+        "XX   XX ",
+        "XX   XX ",
+        "XX   XX ",
+        "XXXXX   "
+      ],
+      'E': [
+        "XXXXXXX ",
+        "XX      ",
+        "XXXXXX  ",
+        "XX      ",
+        "XXXXXXX "
+      ],
+      'F': [
+        "XXXXXXX ",
+        "XX      ",
+        "XXXXXX  ",
+        "XX      ",
+        "XX      "
+      ],
+      'G': [
+        "  XXXXXX ",
+        "XX       ",
+        "XX   XXX ",
+        "XX    XX ",
+        "  XXXXXX "
+      ],
+      'H': [
+        "XX   XX ",
+        "XX   XX ",
+        "XXXXXXX ",
+        "XX   XX ",
+        "XX   XX "
+      ],
+      'I': [
+        "XXXXXXX ",
+        "  XXX   ",
+        "  XXX   ",
+        "  XXX   ",
+        "XXXXXXX "
+      ],
+      'J': [
+        "     XX ",
+        "     XX ",
+        "     XX ",
+        "XX   XX ",
+        "  XXX   "
+      ],
+      'K': [
+        "XX   XX ",
+        "XX  XX  ",
+        "XXXX    ",
+        "XX  XX  ",
+        "XX   XX "
+      ],
+      'L': [
+        "XX      ",
+        "XX      ",
+        "XX      ",
+        "XX      ",
+        "XXXXXXX "
+      ],
+      'M': [
+        "XX    XX ",
+        "XXX  XXX ",
+        "XX XX XX ",
+        "XX    XX ",
+        "XX    XX "
+      ],
+      'N': [
+        "XX    XX ",
+        "XXX   XX ",
+        "XX XX XX ",
+        "XX   XXX ",
+        "XX    XX "
+      ],
+      'O': [
+        " XXXXXX  ",
+        "XX    XX ",
+        "XX    XX ",
+        "XX    XX ",
+        " XXXXXX  "
+      ],
+      'P': [
+        "XXXXXX  ",
+        "XX   XX ",
+        "XXXXXX  ",
+        "XX      ",
+        "XX      "
+      ],
+      'Q': [
+        " XXXXXX  ",
+        "XX    XX ",
+        "XX    XX ",
+        "XX  XXXX ",
+        " XXXXXXX "
+      ],
+      'R': [
+        "XXXXXX  ",
+        "XX   XX ",
+        "XXXXXX  ",
+        "XX   XX ",
+        "XX   XX "
+      ],
+      'S': [
+        "  XXXXX ",
+        "XX      ",
+        "  XXX   ",
+        "     XX ",
+        "XXXXX   "
+      ],
+      'T': [
+        "XXXXXXX ",
+        "  XXX   ",
+        "  XXX   ",
+        "  XXX   ",
+        "  XXX   "
+      ],
+      'U': [
+        "XX   XX ",
+        "XX   XX ",
+        "XX   XX ",
+        "XX   XX ",
+        "XXXXXXX "
+      ],
+      'V': [
+        "XX   XX ",
+        "XX   XX ",
+        "XX   XX ",
+        "XX   XX ",
+        "  XXX   "
+      ],
+      'W': [
+        "XX      XX ",
+        "XX      XX ",
+        "XX      XX ",
+        "XX  XX  XX ",
+        "  XX  XX   "
+      ],
+      'X':[
+        "XX   XX ",
+        "XX   XX ",
+        "  XXX   ",
+        "XX   XX ",
+        "XX   XX "
+      ],
+      'Y':[
+        "XX   XX ",
+        " XX XX  ",
+        "  XXX   ",
+        "  XXX   ",
+        "  XXX   "
+      ],
+      'Z':[
+        "XXXXXXX ",
+        "     XX ",
+        "   XX   ",
+        " XX     ",
+        "XXXXXXX "
+      ]
+    };
+
+    let typed = [];   // {ch, scale}
+    let currentChar = null;
+    let currentScale = 1;
+    let intervalId = null;
+    const maxScale = 8;
+
+    const artEl = document.getElementById('art');
+
+    document.addEventListener('keydown', (e) => {
+      const ch = e.key.toUpperCase();
+      if (!LETTER_ART[ch]) return;
+      if (currentChar === ch) return;
+      currentChar = ch;
+      currentScale = 1;
+
+      intervalId = setInterval(() => {
+        if (currentScale < maxScale) {
+          currentScale++;
+          renderAll();
+        }
+      }, 200);
+
+      renderAll();
+    });
+
+    document.addEventListener('keyup', (e) => {
+      const ch = e.key.toUpperCase();
+      if (!LETTER_ART[ch]) return;
+      if (ch !== currentChar) return;
+      clearInterval(intervalId);
+      intervalId = null;
+
+      typed.push({ ch: currentChar, scale: currentScale });
+      currentChar = null;
+      currentScale = 1;
+      renderAll();
+    });
+
+    function drawAscii(ch, scale) {
+      const art = LETTER_ART[ch];
+      let lines = [];
+      for (const line of art) {
+        let expanded = '';
+        for (const c of line) {
+          expanded += c.repeat(scale);
+        }
+        for (let i = 0; i < scale; i++) {
+          lines.push(expanded.replace(/X/g, ch));
+        }
+      }
+      return lines;
+    }
+
+    // 여러 문자를 가로로 이어 붙여 한 줄에 타이핑 형태로 보여줌
+    function renderAll() {
+      const lineCount = 5 * maxScale; // 각 문자 5줄 * 최대 크기
+      let lines = Array(lineCount).fill('').map(() => '');
+
+      // 이미 작성된 문자들
+      for (const { ch, scale } of typed) {
+        const charArt = drawAscii(ch, scale);
+        for (let i = 0; i < lineCount; i++) {
+          lines[i] += charArt[i] || ' '.repeat(charArt[0].length);
+        }
+      }
+
+      // 누르는 중인 문자도 실시간 표시
+      if (currentChar !== null) {
+        const currentArt = drawAscii(currentChar, currentScale);
+        for (let i = 0; i < lineCount; i++) {
+          lines[i] += currentArt[i] || ' '.repeat(currentArt[0].length);
+        }
+      }
+      artEl.textContent = lines.join('\n');
+    }
+  </script>
+</body>
+</html>
