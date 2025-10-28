@@ -197,7 +197,7 @@
       ]
     };
 
-    let typed = [];   // {ch, scale}
+    let lines = [[]]; // 각 줄별 {ch, scale} 배열
     let currentChar = null;
     let currentScale = 1;
     let intervalId = null;
@@ -206,6 +206,13 @@
     const artEl = document.getElementById('art');
 
     document.addEventListener('keydown', (e) => {
+      if (e.key === "Enter") {
+        // 줄 바꾸기
+        lines.push([]);
+        renderAll();
+        e.preventDefault();
+        return;
+      }
       const ch = e.key.toUpperCase();
       if (!LETTER_ART[ch]) return;
       if (currentChar === ch) return;
@@ -229,7 +236,8 @@
       clearInterval(intervalId);
       intervalId = null;
 
-      typed.push({ ch: currentChar, scale: currentScale });
+      // 현재 줄에 기록
+      lines[lines.length - 1].push({ ch: currentChar, scale: currentScale });
       currentChar = null;
       currentScale = 1;
       renderAll();
@@ -250,27 +258,39 @@
       return lines;
     }
 
-    // 여러 문자를 가로로 이어 붙여 한 줄에 타이핑 형태로 보여줌
+    // 한 줄에 입력된 모든 문자의 ascii art를 가로로 이어붙여 반환
+    function renderLine(lineArr, preview) {
+      if (lineArr.length === 0 && !preview) return [];
+      // 미리보기 문자가 있을 수 있음
+      let arr = [...lineArr];
+      if (preview) arr.push(preview);
+      // 최대 scale 파악하여 그 높이만큼 줄 만들기
+      let maxHeight = arr.reduce((acc, cur) => Math.max(acc, cur.scale), 1) * 5;
+      // 각 문자를 ascii art로 변환
+      let charArts = arr.map(({ch, scale}) => {
+        let art = drawAscii(ch, scale);
+        let pad = Array(maxHeight - art.length).fill(' '.repeat(art[0].length));
+        return art.concat(pad);
+      });
+      // 같은 줄끼리 합치기
+      let result = [];
+      for (let i = 0; i < maxHeight; i++) {
+        result.push(charArts.map(a => a[i]).join(' '));
+      }
+      return result;
+    }
+
+    // 전체 화면을 ascii art로 만들어 출력
     function renderAll() {
-      const lineCount = 5 * maxScale; // 각 문자 5줄 * 최대 크기
-      let lines = Array(lineCount).fill('').map(() => '');
-
-      // 이미 작성된 문자들
-      for (const { ch, scale } of typed) {
-        const charArt = drawAscii(ch, scale);
-        for (let i = 0; i < lineCount; i++) {
-          lines[i] += charArt[i] || ' '.repeat(charArt[0].length);
-        }
+      let result = [];
+      for (let i = 0; i < lines.length; i++) {
+        let preview = null;
+        // 현재 줄이면서 현재 입력 중이면 미리보기 붙임
+        if (i === lines.length - 1 && currentChar !== null)
+          preview = {ch: currentChar, scale: currentScale};
+        result = result.concat(renderLine(lines[i], preview));
       }
-
-      // 누르는 중인 문자도 실시간 표시
-      if (currentChar !== null) {
-        const currentArt = drawAscii(currentChar, currentScale);
-        for (let i = 0; i < lineCount; i++) {
-          lines[i] += currentArt[i] || ' '.repeat(currentArt[0].length);
-        }
-      }
-      artEl.textContent = lines.join('\n');
+      artEl.textContent = result.join('\n');
     }
   </script>
 </body>
