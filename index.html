@@ -197,100 +197,104 @@
       ]
     };
 
-    let lines = [[]]; // 각 줄별 {ch, scale} 배열
-    let currentChar = null;
-    let currentScale = 1;
-    let intervalId = null;
-    const maxScale = 8;
-
-    const artEl = document.getElementById('art');
+    let lines = [[]], currentChar = null, currentScale = 1, intervalId = null;
+    const maxScale = 5, artEl = document.getElementById('art');
 
     document.addEventListener('keydown', (e) => {
       if (e.key === "Enter") {
-        // 줄 바꾸기
         lines.push([]);
         renderAll();
         e.preventDefault();
         return;
       }
       const ch = e.key.toUpperCase();
-      if (!LETTER_ART[ch]) return;
-      if (currentChar === ch) return;
-      currentChar = ch;
-      currentScale = 1;
+      if (!LETTER_ART[ch] || currentChar) return;
+      currentChar = ch; currentScale = 1;
+
+      // 남은 인터벌 있다면 즉시 종료
+      if (intervalId) {
+        clearInterval(intervalId);
+        intervalId = null;
+      }
 
       intervalId = setInterval(() => {
         if (currentScale < maxScale) {
           currentScale++;
           renderAll();
         }
-      }, 200);
+      }, 300);
 
       renderAll();
     });
 
     document.addEventListener('keyup', (e) => {
       const ch = e.key.toUpperCase();
-      if (!LETTER_ART[ch]) return;
-      if (ch !== currentChar) return;
-      clearInterval(intervalId);
-      intervalId = null;
+      // 키 뗄 때 즉시 인터벌 종료
+      if (intervalId) {
+        clearInterval(intervalId);
+        intervalId = null;
+      }
+      if (!LETTER_ART[ch] || ch !== currentChar) return;
 
-      // 현재 줄에 기록
       lines[lines.length - 1].push({ ch: currentChar, scale: currentScale });
-      currentChar = null;
-      currentScale = 1;
+      currentChar = null; currentScale = 1;
       renderAll();
     });
 
+    function scaleColor(scale) {
+      const minHue = 220, maxHue = 0;
+      const hue = minHue + (maxHue - minHue) * ((scale - 1) / (maxScale - 1));
+      return `hsl(${hue}, 80%, 55%)`;
+    }
+
+    function getPadLine(ch, length) {
+      return `<span style="opacity:0">${ch.repeat(length)}</span>`;
+    }
+
     function drawAscii(ch, scale) {
       const art = LETTER_ART[ch];
+      const color = scaleColor(scale);
       let lines = [];
       for (const line of art) {
         let expanded = '';
         for (const c of line) {
-          expanded += c.repeat(scale);
+          if (c === 'X')
+            expanded += `<span style="color:${color}">${ch}</span>`.repeat(scale);
+          else
+            expanded += `<span style="opacity:0">${ch}</span>`.repeat(scale);
         }
-        for (let i = 0; i < scale; i++) {
-          lines.push(expanded.replace(/X/g, ch));
-        }
+        for (let i = 0; i < scale; i++) lines.push(expanded);
       }
       return lines;
     }
 
-    // 한 줄에 입력된 모든 문자의 ascii art를 가로로 이어붙여 반환
     function renderLine(lineArr, preview) {
-      if (lineArr.length === 0 && !preview) return [];
-      // 미리보기 문자가 있을 수 있음
-      let arr = [...lineArr];
+      let arr = lineArr.slice();
       if (preview) arr.push(preview);
-      // 최대 scale 파악하여 그 높이만큼 줄 만들기
-      let maxHeight = arr.reduce((acc, cur) => Math.max(acc, cur.scale), 1) * 5;
-      // 각 문자를 ascii art로 변환
-      let charArts = arr.map(({ch, scale}) => {
+      const maxH = arr.reduce((a, b) => Math.max(a, b.scale), 1) * 5;
+      let charArts = arr.map(({ ch, scale }) => {
         let art = drawAscii(ch, scale);
-        let pad = Array(maxHeight - art.length).fill(' '.repeat(art[0].length));
+        let width = art[0].replace(/<[^>]+>/g, '').length;
+        let pad = Array.from({ length: maxH - art.length }, () => getPadLine(ch, width));
         return art.concat(pad);
       });
-      // 같은 줄끼리 합치기
       let result = [];
-      for (let i = 0; i < maxHeight; i++) {
+      for (let i = 0; i < maxH; i++) {
         result.push(charArts.map(a => a[i]).join(' '));
       }
       return result;
     }
 
-    // 전체 화면을 ascii art로 만들어 출력
     function renderAll() {
       let result = [];
+      const lastIdx = lines.length - 1;
       for (let i = 0; i < lines.length; i++) {
-        let preview = null;
-        // 현재 줄이면서 현재 입력 중이면 미리보기 붙임
-        if (i === lines.length - 1 && currentChar !== null)
-          preview = {ch: currentChar, scale: currentScale};
+        let preview = (i === lastIdx && currentChar)
+          ? { ch: currentChar, scale: currentScale }
+          : null;
         result = result.concat(renderLine(lines[i], preview));
       }
-      artEl.textContent = result.join('\n');
+      artEl.innerHTML = result.join('\n');
     }
   </script>
 </body>
