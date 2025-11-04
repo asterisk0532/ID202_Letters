@@ -1,302 +1,355 @@
 <!DOCTYPE html>
 <head>
   <meta charset="UTF-8" />
-  <title>Alphabet</title>
+  <title>Interactive ASCII Art (Grow + Random Color + Ctrl Delete + Scroll Rotate + Drag Move)</title>
   <style>
-    body { font-family: monospace; text-align:center; margin-top:50px; }
-    pre { font-size:16px; white-space: pre; }
+    body {
+      font-family: monospace;
+      margin: 0;
+      height: 100vh;
+      overflow: hidden;
+      background: #111;
+      cursor: crosshair;
+    }
+
+    #container {
+      position: relative;
+      width: 100%;
+      height: 100%;
+    }
+
+    .ascii-art {
+      position: absolute;
+      white-space: pre;
+      font-size: 20px; /* ✅ 폰트 크기 고정 */
+      line-height: 1;
+      transform: translate(-50%, -50%) rotate(0deg);
+      transform-origin: center center;
+      pointer-events: auto;
+      transition: transform 0.1s linear;
+      user-select: none; /* ✅ 드래그 시 텍스트 선택 방지 */
+    }
+    #help-box {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 10px;
+      padding: 10px 14px;
+      font-size: 13px;
+      color: #eee;
+      line-height: 1.4;
+      pointer-events: none;
+      text-align: left;
+    }
+
+    #help-box b {
+      color: #79aaff;
+    }
   </style>
 </head>
 <body>
-  <pre id="art"></pre>
+  <div id="container"></div>
+
+  <div id="help-box">
+    <b>Controls</b><br>
+    Type a letter → Create ASCII art<br>
+    Hold key → Grow size<br>
+    Ctrl + Click → Delete<br>
+    Scroll → Rotate<br>
+    Drag → Move<br>
+    Ctrl + H → Toggle Help Box
+  </div>
 
   <script>
+    // ─────────────────────────────
+    // ASCII 문자 정의
+    // ─────────────────────────────
     const LETTER_ART = {
-      'A': [
-        "  XXX   ",
-        "XX   XX ",
-        "XXXXXXX ",
-        "XX   XX ",
-        "XX   XX "
-      ],
-      'B': [
-        "XXXXX   ",
-        "XX   XX ",
-        "XXXXX   ",
-        "XX   XX ",
-        "XXXXX   "
-      ],
-      'C': [
-        " XXXXXX ",
-        "XX      ",
-        "XX      ",
-        "XX      ",
-        " XXXXXX "
-      ],
-      'D': [
-        "XXXXX   ",
-        "XX   XX ",
-        "XX   XX ",
-        "XX   XX ",
-        "XXXXX   "
-      ],
-      'E': [
-        "XXXXXXX ",
-        "XX      ",
-        "XXXXXX  ",
-        "XX      ",
-        "XXXXXXX "
-      ],
-      'F': [
-        "XXXXXXX ",
-        "XX      ",
-        "XXXXXX  ",
-        "XX      ",
-        "XX      "
-      ],
-      'G': [
-        "  XXXXXX ",
-        "XX       ",
-        "XX   XXX ",
-        "XX    XX ",
-        "  XXXXXX "
-      ],
-      'H': [
-        "XX   XX ",
-        "XX   XX ",
-        "XXXXXXX ",
-        "XX   XX ",
-        "XX   XX "
-      ],
-      'I': [
-        "XXXXXXX ",
-        "  XXX   ",
-        "  XXX   ",
-        "  XXX   ",
-        "XXXXXXX "
-      ],
-      'J': [
-        "     XX ",
-        "     XX ",
-        "     XX ",
-        "XX   XX ",
-        "  XXX   "
-      ],
-      'K': [
-        "XX   XX ",
-        "XX  XX  ",
-        "XXXX    ",
-        "XX  XX  ",
-        "XX   XX "
-      ],
-      'L': [
-        "XX      ",
-        "XX      ",
-        "XX      ",
-        "XX      ",
-        "XXXXXXX "
-      ],
-      'M': [
-        "XX    XX ",
-        "XXX  XXX ",
-        "XX XX XX ",
-        "XX    XX ",
-        "XX    XX "
-      ],
-      'N': [
-        "XX    XX ",
-        "XXX   XX ",
-        "XX XX XX ",
-        "XX   XXX ",
-        "XX    XX "
-      ],
-      'O': [
-        " XXXXXX  ",
-        "XX    XX ",
-        "XX    XX ",
-        "XX    XX ",
-        " XXXXXX  "
-      ],
-      'P': [
-        "XXXXXX  ",
-        "XX   XX ",
-        "XXXXXX  ",
-        "XX      ",
-        "XX      "
-      ],
-      'Q': [
-        " XXXXXX  ",
-        "XX    XX ",
-        "XX    XX ",
-        "XX  XXXX ",
-        " XXXXXXX "
-      ],
-      'R': [
-        "XXXXXX  ",
-        "XX   XX ",
-        "XXXXXX  ",
-        "XX   XX ",
-        "XX   XX "
-      ],
-      'S': [
-        "  XXXXX ",
-        "XX      ",
-        "  XXX   ",
-        "     XX ",
-        "XXXXX   "
-      ],
-      'T': [
-        "XXXXXXX ",
-        "  XXX   ",
-        "  XXX   ",
-        "  XXX   ",
-        "  XXX   "
-      ],
-      'U': [
-        "XX   XX ",
-        "XX   XX ",
-        "XX   XX ",
-        "XX   XX ",
-        "XXXXXXX "
-      ],
-      'V': [
-        "XX   XX ",
-        "XX   XX ",
-        "XX   XX ",
-        "XX   XX ",
-        "  XXX   "
-      ],
-      'W': [
-        "XX      XX ",
-        "XX      XX ",
-        "XX      XX ",
-        "XX  XX  XX ",
-        "  XX  XX   "
-      ],
-      'X':[
-        "XX   XX ",
-        "XX   XX ",
-        "  XXX   ",
-        "XX   XX ",
-        "XX   XX "
-      ],
-      'Y':[
-        "XX   XX ",
-        " XX XX  ",
-        "  XXX   ",
-        "  XXX   ",
-        "  XXX   "
-      ],
-      'Z':[
-        "XXXXXXX ",
-        "     XX ",
-        "   XX   ",
-        " XX     ",
-        "XXXXXXX "
-      ]
+      'A': ["  XXX   ",
+            "XX   XX ",
+            "XXXXXXX ",
+            "XX   XX ",
+            "XX   XX "],
+
+      'B': ["XXXXX   ",
+            "XX   XX ",
+            "XXXXX   ",
+            "XX   XX ",
+            "XXXXX   "],
+
+      'C': [" XXXXXX ",
+            "XX      ",
+            "XX      ",
+            "XX      ",
+            " XXXXXX "],
+
+      'D': ["XXXXX   ",
+            "XX   XX ",
+            "XX   XX ",
+            "XX   XX ",
+            "XXXXX   "],
+
+      'E': ["XXXXXXX ",
+            "XX      ",
+            "XXXXXX  ",
+            "XX      ",
+            "XXXXXXX "],
+
+      'F': ["XXXXXXX ",
+            "XX      ",
+            "XXXXXX  ",
+            "XX      ",
+            "XX      "],
+
+      'G': ["  XXXXXX ",
+            "XX       ",
+            "XX   XXX ",
+            "XX    XX ",
+            "  XXXXXX "],
+
+      'H': ["XX   XX ",
+            "XX   XX ",
+            "XXXXXXX ",
+            "XX   XX ",
+            "XX   XX "],
+
+      'I': ["XXXXXXX ",
+            "  XXX   ",
+            "  XXX   ",
+            "  XXX   ",
+            "XXXXXXX "],
+
+      'J': ["     XX ",
+            "     XX ",
+            "     XX ",
+            "XX   XX ",
+            "  XXX   "],
+
+      'K': ["XX   XX ",
+            "XX  XX  ",
+            "XXXX    ",
+            "XX  XX  ",
+            "XX   XX "],
+
+      'L': ["XX      ",
+            "XX      ",
+            "XX      ",
+            "XX      ",
+            "XXXXXXX "],
+
+      'M': ["XX    XX ",
+            "XXX  XXX ",
+            "XX XX XX ",
+            "XX    XX ",
+            "XX    XX "],
+
+      'N': ["XX    XX ",
+            "XXX   XX ",
+            "XX XX XX ",
+            "XX   XXX ",
+            "XX    XX "],
+
+      'O': [" XXXXXX  ",
+            "XX    XX ",
+            "XX    XX ",
+            "XX    XX ",
+            " XXXXXX  "],
+
+      'P': ["XXXXXX  ",
+            "XX   XX ",
+            "XXXXXX  ",
+            "XX      ",
+            "XX      "],
+
+      'Q': [" XXXXXX  ",
+            "XX    XX ",
+            "XX    XX ",
+            "XX  XXXX ",
+            " XXXXXXX "],
+
+      'R': ["XXXXXX  ",
+            "XX   XX ",
+            "XXXXXX  ",
+            "XX   XX ",
+            "XX   XX "],
+
+      'S': ["  XXXXX ",
+            "XX      ",
+            "  XXX   ",
+            "     XX ",
+            "XXXXX   "],
+
+      'T': ["XXXXXXX ",
+            "  XXX   ",
+            "  XXX   ",
+            "  XXX   ",
+            "  XXX   "],
+
+      'U': ["XX   XX ",
+            "XX   XX ",
+            "XX   XX ",
+            "XX   XX ",
+            "XXXXXXX "],
+
+      'V': ["XX   XX ",
+            "XX   XX ",
+            "XX   XX ",
+            "XX   XX ",
+            "  XXX   "],
+
+      'W': ["XX      XX ",
+            "XX      XX ",
+            "XX      XX ",
+            "XX  XX  XX ",
+            "  XX  XX   "],
+
+      'X': ["XX   XX ",
+            "XX   XX ",
+            "  XXX   ",
+            "XX   XX ",
+            "XX   XX "],
+
+      'Y': ["XX   XX ",
+            " XX XX  ",
+            "  XXX   ",
+            "  XXX   ",
+            "  XXX   "],
+
+      'Z': ["XXXXXXX ",
+            "     XX ",
+            "   XX   ",
+            " XX     ",
+            "XXXXXXX "]
     };
 
-    let lines = [[]], currentChar = null, currentScale = 1, intervalId = null;
-    const maxScale = 5, artEl = document.getElementById('art');
+    const container = document.getElementById("container");
+    const maxScale = 10;
+    let currentChar = null;
+    let currentScale = 1;
+    let growInterval = null;
+    let mouseX = window.innerWidth / 2;
+    let mouseY = window.innerHeight / 2;
+    let currentElement = null;
+    let color = "white";
 
-    document.addEventListener('keydown', (e) => {
-      if (e.key === "Enter") {
-        lines.push([]);
-        renderAll();
-        e.preventDefault();
-        return;
-      }
-      const ch = e.key.toUpperCase();
-      if (!LETTER_ART[ch] || currentChar) return;
-      currentChar = ch; currentScale = 1;
+    // 드래그 관련
+    let dragging = null;
+    let dragOffsetX = 0;
+    let dragOffsetY = 0;
 
-      // 남은 인터벌 있다면 즉시 종료
-      if (intervalId) {
-        clearInterval(intervalId);
-        intervalId = null;
-      }
-
-      intervalId = setInterval(() => {
-        if (currentScale < maxScale) {
-          currentScale++;
-          renderAll();
-        }
-      }, 300);
-
-      renderAll();
-    });
-
-    document.addEventListener('keyup', (e) => {
-      const ch = e.key.toUpperCase();
-      // 키 뗄 때 즉시 인터벌 종료
-      if (intervalId) {
-        clearInterval(intervalId);
-        intervalId = null;
-      }
-      if (!LETTER_ART[ch] || ch !== currentChar) return;
-
-      lines[lines.length - 1].push({ ch: currentChar, scale: currentScale });
-      currentChar = null; currentScale = 1;
-      renderAll();
-    });
-
-    function scaleColor(scale) {
-      const minHue = 220, maxHue = 0;
-      const hue = minHue + (maxHue - minHue) * ((scale - 1) / (maxScale - 1));
-      return `hsl(${hue}, 80%, 55%)`;
+    // ─────────────────────────────
+    // 유틸 함수
+    // ─────────────────────────────
+    function randomColor() {
+      const h = Math.floor(Math.random() * 360);
+      const s = 70 + Math.random() * 20;
+      const l = 50 + Math.random() * 20;
+      return `hsl(${h}, ${s}%, ${l}%)`;
     }
 
-    function getPadLine(ch, length) {
-      return `<span style="opacity:0">${ch.repeat(length)}</span>`;
-    }
-
-    function drawAscii(ch, scale) {
+    function buildAscii(ch, scale) {
       const art = LETTER_ART[ch];
-      const color = scaleColor(scale);
-      let lines = [];
-      for (const line of art) {
-        let expanded = '';
-        for (const c of line) {
-          if (c === 'X')
-            expanded += `<span style="color:${color}">${ch}</span>`.repeat(scale);
-          else
-            expanded += `<span style="opacity:0">${ch}</span>`.repeat(scale);
+      if (!art) return "";
+      const lines = [];
+      for (const row of art) {
+        let expanded = "";
+        for (const c of row) {
+          expanded += c === "X" ? ch.repeat(scale) : " ".repeat(scale);
         }
         for (let i = 0; i < scale; i++) lines.push(expanded);
       }
-      return lines;
+      return lines.join("\n");
     }
 
-    function renderLine(lineArr, preview) {
-      let arr = lineArr.slice();
-      if (preview) arr.push(preview);
-      const maxH = arr.reduce((a, b) => Math.max(a, b.scale), 1) * 5;
-      let charArts = arr.map(({ ch, scale }) => {
-        let art = drawAscii(ch, scale);
-        let width = art[0].replace(/<[^>]+>/g, '').length;
-        let pad = Array.from({ length: maxH - art.length }, () => getPadLine(ch, width));
-        return art.concat(pad);
-      });
-      let result = [];
-      for (let i = 0; i < maxH; i++) {
-        result.push(charArts.map(a => a[i]).join(' '));
-      }
-      return result;
-    }
+    document.addEventListener("mousemove", e => {
+      mouseX = e.clientX;
+      mouseY = e.clientY;
 
-    function renderAll() {
-      let result = [];
-      const lastIdx = lines.length - 1;
-      for (let i = 0; i < lines.length; i++) {
-        let preview = (i === lastIdx && currentChar)
-          ? { ch: currentChar, scale: currentScale }
-          : null;
-        result = result.concat(renderLine(lines[i], preview));
+      if (dragging) {
+        dragging.style.left = `${mouseX - dragOffsetX}px`;
+        dragging.style.top = `${mouseY - dragOffsetY}px`;
       }
-      artEl.innerHTML = result.join('\n');
-    }
+    });
+
+    document.addEventListener("keydown", e => {
+      if (e.ctrlKey && e.key.toLowerCase() === 'h') {
+        e.preventDefault(); // 브라우저 기본 단축키 방지
+        const helpBox = document.getElementById("help-box");
+        helpBox.style.display = helpBox.style.display === "none" ? "block" : "none";
+        return;
+      }
+
+      if (e.repeat) return;
+      const ch = e.key.toUpperCase();
+      if (!LETTER_ART[ch]) return;
+      if (currentChar) return;
+
+      currentChar = ch;
+      currentScale = 1;
+      color = randomColor();
+
+      currentElement = document.createElement("pre");
+      currentElement.className = "ascii-art";
+      currentElement.style.left = `${mouseX}px`;
+      currentElement.style.top = `${mouseY}px`;
+      currentElement.style.color = color;
+      currentElement.textContent = buildAscii(ch, currentScale);
+      container.appendChild(currentElement);
+
+      growInterval = setInterval(() => {
+        if (currentScale < maxScale) {
+          currentScale++;
+          currentElement.textContent = buildAscii(ch, currentScale);
+        } else {
+          clearInterval(growInterval);
+        }
+      }, 300);
+    });
+
+    document.addEventListener("keyup", e => {
+      const ch = e.key.toUpperCase();
+      if (ch !== currentChar) return;
+      if (growInterval) clearInterval(growInterval);
+      growInterval = null;
+      currentElement = null;
+      currentChar = null;
+      currentScale = 1;
+    });
+
+    container.addEventListener("click", e => {
+      if (e.ctrlKey && e.target.classList.contains("ascii-art")) {
+        e.target.remove();
+      }
+    });
+
+    container.addEventListener("wheel", e => {
+      const target = e.target;
+      if (!target.classList.contains("ascii-art")) return;
+      e.preventDefault();
+      let currentRotation = parseFloat(target.dataset.rotation || "0");
+      const delta = e.deltaY > 0 ? 10 : -10;
+      currentRotation += delta;
+      target.dataset.rotation = currentRotation;
+      target.style.transform = `translate(-50%, -50%) rotate(${currentRotation}deg)`;
+    });
+
+    container.addEventListener("mousedown", e => {
+      const target = e.target;
+      if (!target.classList.contains("ascii-art")) return;
+      e.preventDefault();
+
+      dragging = target;
+
+      const rect = target.getBoundingClientRect();
+      dragOffsetX = e.clientX - rect.left - rect.width / 2;
+      dragOffsetY = e.clientY - rect.top - rect.height / 2;
+    });
+
+    document.addEventListener("mouseup", () => {
+      dragging = null;
+    });
   </script>
 </body>
 </html>
-
-
