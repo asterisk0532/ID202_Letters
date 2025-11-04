@@ -21,13 +21,13 @@
     .ascii-art {
       position: absolute;
       white-space: pre;
-      font-size: 20px; /* ✅ 폰트 크기 고정 */
+      font-size: 20px;
       line-height: 1;
       transform: translate(-50%, -50%) rotate(0deg);
       transform-origin: center center;
       pointer-events: auto;
       transition: transform 0.1s linear;
-      user-select: none; /* ✅ 드래그 시 텍스트 선택 방지 */
+      user-select: none;
     }
     #help-box {
       position: absolute;
@@ -63,9 +63,7 @@
   </div>
 
   <script>
-    // ─────────────────────────────
-    // ASCII 문자 정의
-    // ─────────────────────────────
+    
     const LETTER_ART = {
       'A': ["  XXX   ",
             "XX   XX ",
@@ -234,14 +232,11 @@
     let currentElement = null;
     let color = "white";
 
-    // 드래그 관련
+    
     let dragging = null;
     let dragOffsetX = 0;
     let dragOffsetY = 0;
 
-    // ─────────────────────────────
-    // 유틸 함수
-    // ─────────────────────────────
     function randomColor() {
       const h = Math.floor(Math.random() * 360);
       const s = 70 + Math.random() * 20;
@@ -275,7 +270,7 @@
 
     document.addEventListener("keydown", e => {
       if (e.ctrlKey && e.key.toLowerCase() === 'h') {
-        e.preventDefault(); // 브라우저 기본 단축키 방지
+        e.preventDefault();
         const helpBox = document.getElementById("help-box");
         helpBox.style.display = helpBox.style.display === "none" ? "block" : "none";
         return;
@@ -353,4 +348,5 @@
   </script>
 </body>
 </html>
+
 
